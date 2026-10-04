@@ -4,7 +4,7 @@
 
 Press OK once when a moment feels like too much. The device records it, plays a short sound, and shows today's count. Statistics shows the week, and the month shows every day so far.
 
-On Today, press Up for Statistics and Down for the month. On Statistics, press Down to return to Today. On the month, press Up to return to Today. The pages do not wrap. A short OK press on Statistics or the month also records one count and returns to Today.
+On Today, press Up for Statistics and Down for the month. On Statistics, press Down to return to Today. On the month, press Up to return to Today. The pages do not wrap. Those hints are centered. The month puts its return hint at the top and shows no page index. A short OK press on Statistics or the month also records one count and returns to Today. Today shows the battery percent to the left of the speaker. After one minute without a button, the backlight turns off. The next button only turns it back on.
 
 Statistics draws seven bars for this week, Monday through Sunday, and the change from yesterday. A warm triangle means the count went up, a cool triangle means it went down, and the number is the size of that change. A flat day shows 0. If yesterday has no record, the comparison shows `--`.
 

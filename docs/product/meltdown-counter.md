@@ -6,13 +6,13 @@ This note records the behavior of the application. The public guide is the repos
 
 ## Pages
 
-Today shows the date, the speaker mark, today's count, and the controls. Up opens Statistics. Down opens the month. OK records one press.
+Today shows the date, the speaker mark, the battery percent, today's count, and the controls. Up opens Statistics. Down opens the month. OK records one press. Page hints are centered: Statistics at the top and the month at the bottom. The battery percent sits just left of the speaker. An unavailable reading shows `--`.
 
-Statistics comes before Today. It shows this week's seven bars, Monday through Sunday, and the change from yesterday. Down returns to Today. Another Up press stays here. OK records one press and returns to Today. Hold OK to mute without recording and without leaving the page.
+Statistics comes before Today. It shows this week's seven bars, Monday through Sunday, and the change from yesterday. Down returns to Today, with that hint centered at the bottom. Another Up press stays here. OK records one press and returns to Today. Hold OK to mute without recording and without leaving the page.
 
-The month is the current month only. Columns are weeks and rows run Monday through Sunday. Up returns to Today. Down stays. OK records one press and returns to Today. The page index is hidden while the mute mark flashes, so the two do not overlap.
+The month is the current month only. Columns are weeks and rows run Monday through Sunday. Up returns to Today, with that hint centered at the top. Down stays. There is no page index. OK records one press and returns to Today.
 
-There is no page wrap.
+There is no page wrap. After one minute without a button, the backlight turns off. The next button only turns it back on. It does not record a press or change pages.
 
 ## Comparison and color
 

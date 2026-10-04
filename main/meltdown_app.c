@@ -6,6 +6,7 @@
 #include "meltdown_store.h"
 #include "meltdown_ui.h"
 
+#include "bsp_battery.h"
 #include "bsp_button.h"
 #include "bsp_display.h"
 #include "bsp_i2c.h"
@@ -26,12 +27,12 @@ static const char *TAG = "meltdown";
 #define INPUT_QUEUE_DEPTH 16
 /* Pays for the NimBLE host stack growing to 8192 during DH negotiation. */
 #define APP_TASK_STACK 8192
-#define IDLE_DIM_US (20LL * 1000 * 1000)
+#define IDLE_BLANK_US (60LL * 1000 * 1000)
+#define BATTERY_POLL_US (5LL * 1000 * 1000)
 #define MUTE_FLASH_US (800LL * 1000)
 #define PROVISION_WAIT_US (15LL * 1000 * 1000)
 #define SYNC_FAIL_US (30LL * 1000 * 1000)
 #define LOOP_DELAY_MS 20
-#define DIM_PERCENT 12
 
 typedef struct {
     bsp_btn_t button;
@@ -44,7 +45,8 @@ static bool s_record_dirty;
 static bool s_save_failed;
 static bool s_rollover_pending;
 static bool s_ui_dirty = true;
-static bool s_dimmed;
+static bool s_blanked;
+static bool s_battery_ready;
 static bool s_net_started;
 static const char *s_sync_line = "正在校时";
 static int64_t s_boot_us;
@@ -52,6 +54,8 @@ static int64_t s_idle_us;
 static int64_t s_mute_until_us;
 static int64_t s_save_log_us;
 static int64_t s_provision_retry_us;
+static int64_t s_battery_us;
+static int s_battery_soc = -1;
 
 static void on_button(bsp_btn_t button, bsp_btn_ev_t event, void *user)
 {
@@ -252,23 +256,46 @@ static void service_backlight(bool activity)
     const int64_t now = esp_timer_get_time();
     if (activity) {
         s_idle_us = now;
-        if (s_dimmed) {
+        if (s_blanked) {
             bsp_display_backlight(100);
-            s_dimmed = false;
+            s_blanked = false;
         }
         return;
     }
-    if (!s_dimmed && now - s_idle_us > IDLE_DIM_US) {
-        bsp_display_backlight(DIM_PERCENT);
-        s_dimmed = true;
+    if (!s_blanked && now - s_idle_us > IDLE_BLANK_US) {
+        bsp_display_backlight(0);
+        s_blanked = true;
     }
+}
+
+static void poll_battery(void)
+{
+    const int64_t now = esp_timer_get_time();
+    if (!s_battery_ready) {
+        s_battery_ready = true;
+        if (bsp_battery_init() != ESP_OK) {
+            ESP_LOGW(TAG, "battery gauge unavailable");
+            s_battery_soc = -1;
+        } else {
+            s_battery_soc = bsp_battery_soc();
+        }
+        s_battery_us = now;
+        s_ui_dirty = true;
+        return;
+    }
+    if (now - s_battery_us < BATTERY_POLL_US) return;
+    s_battery_us = now;
+    const int soc = bsp_battery_soc();
+    if (soc == s_battery_soc) return;
+    s_battery_soc = soc;
+    s_ui_dirty = true;
 }
 
 static void refresh_ui(void)
 {
     if (!s_ui_dirty) return;
     if (!bsp_lvgl_lock(200)) return;
-    meltdown_ui_refresh(&s_state, s_sync_line, s_save_failed);
+    meltdown_ui_refresh(&s_state, s_sync_line, s_save_failed, s_battery_soc);
     bsp_lvgl_unlock();
     s_ui_dirty = false;
 }
@@ -281,6 +308,8 @@ static void app_task(void *arg)
         bool activity = false;
         while (xQueueReceive(s_queue, &event, 0) == pdTRUE) {
             activity = true;
+            /* A press while the backlight is off only wakes the screen. */
+            if (s_blanked) continue;
             meltdown_input_t input;
             const int count = map_button(&event, &input);
             for (int i = 0; i < count; i++) handle_input(input, true);
@@ -296,6 +325,7 @@ static void app_task(void *arg)
             s_ui_dirty = true;
         }
         service_backlight(activity);
+        poll_battery();
         refresh_ui();
         vTaskDelay(pdMS_TO_TICKS(LOOP_DELAY_MS));
     }
@@ -330,7 +360,7 @@ esp_err_t meltdown_app_start(void)
     bsp_display_backlight(100);
     if (!bsp_lvgl_lock(1000)) return ESP_ERR_TIMEOUT;
     meltdown_ui_create();
-    meltdown_ui_refresh(&s_state, s_sync_line, s_save_failed);
+    meltdown_ui_refresh(&s_state, s_sync_line, s_save_failed, s_battery_soc);
     bsp_lvgl_unlock();
     s_ui_dirty = false;
     ESP_LOGI(TAG, "heap after UI free=%u largest=%u",

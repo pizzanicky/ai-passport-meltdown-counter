@@ -35,6 +35,9 @@
 #define CELL_SM 22
 #define DATE_SLOTS 9
 #define PENDING_SLOTS 8
+#define BATTERY_SLOTS 4
+#define NAV_CENTER_Y_TOP 22
+#define NAV_CENTER_Y_BOTTOM 302
 
 static lv_obj_t *s_scr;
 static lv_obj_t *s_date_ch[DATE_SLOTS];
@@ -57,7 +60,7 @@ static lv_obj_t *s_record;
 static lv_obj_t *s_ok_key;
 static lv_obj_t *s_down;
 static lv_obj_t *s_down_key;
-static lv_obj_t *s_page;
+static lv_obj_t *s_batt_ch[BATTERY_SLOTS];
 static lv_obj_t *s_col_ch[6][2];
 static lv_obj_t *s_weekdays[7];
 static lv_obj_t *s_cells[6][7];
@@ -152,6 +155,22 @@ static void place_phrase(lv_obj_t *img, const char *text, uint32_t color)
     lv_obj_set_pos(img, phrase->x, phrase->y);
     recolor_if(img, color);
     show(img, true);
+}
+
+/* Icon plus label, centered on the 240-wide screen. Top and bottom hints share this slot. */
+static void place_nav(lv_obj_t *icon, const char *icon_key, lv_obj_t *label, const char *label_key, int center_y)
+{
+    place_phrase(icon, icon_key, COL_INK);
+    place_phrase(label, label_key, COL_INK);
+    const melt_phrase_t *icon_phrase = melt_dots_phrase(icon_key);
+    const melt_phrase_t *label_phrase = melt_dots_phrase(label_key);
+    if (!icon || !label || !icon_phrase || !label_phrase || !icon_phrase->image || !label_phrase->image) return;
+    const int gap = 6;
+    const int icon_w = (int)icon_phrase->image->header.w;
+    const int label_w = (int)label_phrase->image->header.w;
+    const int x = (240 - icon_w - gap - label_w) / 2;
+    lv_obj_set_pos(icon, x, center_y - (int)icon_phrase->image->header.h / 2);
+    lv_obj_set_pos(label, x + icon_w + gap, center_y - (int)label_phrase->image->header.h / 2);
 }
 
 static lv_obj_t *make_glyph_slot(void)
@@ -419,7 +438,7 @@ void meltdown_ui_create(void)
     s_mute_label = make_phrase("静音", COL_INK);
     s_stats_hint = make_phrase("统计", COL_INK);
     s_stats_key = make_phrase("icon:stats", COL_INK);
-    s_motto = make_phrase("记下这一刻, 继续向前", COL_DIM);
+    s_motto = make_phrase("牛马的崩溃瞬间，只有自己知道", COL_DIM);
     s_stats_back = make_phrase("icon:stats-back", COL_INK);
     s_hero = make_phrase("今日崩溃", COL_INK);
     s_unit = make_phrase("次", COL_INK);
@@ -441,7 +460,7 @@ void meltdown_ui_create(void)
     s_record = make_phrase("崩溃时按一下", COL_INK);
     s_down_key = make_phrase("icon:down", COL_INK);
     s_down = make_phrase("本月", COL_INK);
-    s_page = make_phrase("03 / 03", COL_INK);
+    for (int i = 0; i < BATTERY_SLOTS; i++) s_batt_ch[i] = make_glyph_slot();
     for (int column = 0; column < 6; column++) {
         s_col_ch[column][0] = make_glyph_slot();
         s_col_ch[column][1] = make_glyph_slot();
@@ -476,7 +495,7 @@ void meltdown_ui_create(void)
     lv_screen_load(s_scr);
 }
 
-void meltdown_ui_refresh(const meltdown_state_t *state, const char *sync_line, bool save_failed)
+void meltdown_ui_refresh(const meltdown_state_t *state, const char *sync_line, bool save_failed, int battery_soc)
 {
     if (!state) return;
     const bool today = state->page == MELTDOWN_PAGE_TODAY;
@@ -503,17 +522,33 @@ void meltdown_ui_refresh(const meltdown_state_t *state, const char *sync_line, b
 
     if (month) layout_ascii(s_date_ch, DATE_SLOTS, month_text, MELT_FACE_MENLO, 14, 22, 0, COL_INK);
     else layout_ascii(s_date_ch, DATE_SLOTS, date_text, MELT_FACE_MENLO, 14, 22, 0, COL_INK);
-    /* The mute cluster and the page index share the top-right. Hide the index during the flash. */
-    show(s_page, month && !state->mute_flash);
     show(s_speaker, show_mute);
     show(s_slash, show_mute && state->record.muted);
     show(s_mute_key, today);
     show(s_mute_text, today);
     show(s_mute_label, today);
-    show(s_stats_hint, today);
-    show(s_stats_key, today);
+    if (today) place_nav(s_stats_key, "icon:stats", s_stats_hint, "统计", NAV_CENTER_Y_TOP);
+    else {
+        show(s_stats_key, false);
+        show(s_stats_hint, false);
+    }
     show(s_motto, today && !pending && !save_failed);
-    show(s_stats_back, stats);
+    if (month) place_nav(s_up_key, "icon:up", s_up, "返回今日", NAV_CENTER_Y_TOP);
+    else show(s_up_key, false);
+    if (stats) place_nav(s_stats_back, "icon:stats-back", s_up, "返回今日", NAV_CENTER_Y_BOTTOM);
+    else show(s_stats_back, false);
+    if (!month && !stats) show(s_up, false);
+    if (today) {
+        char battery_text[8];
+        if (battery_soc < 0 || battery_soc > 100) snprintf(battery_text, sizeof battery_text, "--");
+        else snprintf(battery_text, sizeof battery_text, "%d%%", battery_soc);
+        const melt_phrase_t *speaker = melt_dots_phrase("icon:speaker");
+        const int right = speaker ? speaker->x - 4 : 209;
+        layout_ascii(s_batt_ch, BATTERY_SLOTS, battery_text, MELT_FACE_MENLO, right, NAV_CENTER_Y_TOP, 2,
+                     battery_soc < 0 || battery_soc > 100 ? COL_DIM : COL_INK);
+    } else {
+        layout_ascii(s_batt_ch, BATTERY_SLOTS, "", MELT_FACE_MENLO, 0, 0, 2, COL_INK);
+    }
 
     if (!month) {
         const char *title = "今日崩溃";
@@ -554,16 +589,17 @@ void meltdown_ui_refresh(const meltdown_state_t *state, const char *sync_line, b
     lv_obj_set_pos(s_ok_key, assign ? 14 : 27, assign ? 295 : 218);
     if (!month && !stats) place_phrase(s_record, assign ? "记入今日" : "崩溃时按一下", COL_INK);
     else show(s_record, false);
-    if (today || assign) {
-        place_phrase(s_down, assign ? "保持分开" : "本月", COL_INK);
-        lv_obj_set_pos(s_down_key, assign ? 158 : 179, 296);
+    if (today) place_nav(s_down_key, "icon:down", s_down, "本月", NAV_CENTER_Y_BOTTOM);
+    else if (assign) {
+        place_phrase(s_down, "保持分开", COL_INK);
+        const melt_phrase_t *down_icon = melt_dots_phrase("icon:down");
+        if (down_icon && down_icon->image) src_if(s_down_key, down_icon->image);
+        lv_obj_set_pos(s_down_key, 158, 296);
         show(s_down_key, true);
     } else {
         show(s_down, false);
         show(s_down_key, false);
     }
-    show(s_up, month || stats);
-    show(s_up_key, month);
 
     const bool grid_on = month && meltdown_can_file(state);
     meltdown_grid_t grid = {0};

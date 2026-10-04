@@ -41,7 +41,7 @@ function trim(px,w,h) {
  return {w:nw,h:nh,px:out};
 }
 function maskText(text,height,font='Han',weight=400) {
- const c=createCanvas(1600,240),g=c.getContext('2d');
+ const c=createCanvas(4000,240),g=c.getContext('2d');
  g.font=`${weight} 160px "${font}"`;g.fillStyle='white';g.fillText(text,10,180);
  const d=g.getImageData(0,0,c.width,c.height).data;
  let l=c.width,r=0,t=c.height,b=0;
@@ -96,7 +96,7 @@ mg.font='400 160px "Digits"';mg.fillStyle='white';mg.fillText('0',20,180);
 const md=mg.getImageData(0,0,240,240).data;let mt=240,mb=0;
 for(let y=0;y<240;y++)for(let x=0;x<240;x++)if(md[(y*240+x)*4+3]>10){mt=Math.min(mt,y);mb=Math.max(mb,y);}
 const monoScale=MENLO_H/(mb-mt+1);
-for(const ch of '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.-/'){
+for(const ch of '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.-/%'){
  mg.clearRect(0,0,240,240);mg.fillText(ch,20,180);
  const small=createCanvas(menloAdvance*4,MENLO_H*4),sg=small.getContext('2d');
  sg.drawImage(monoCanvas,20,mt,menloAdvance/monoScale,mb-mt+1,0,0,menloAdvance*4,MENLO_H*4);
@@ -119,24 +119,31 @@ icon('icon:slash','slash',213,22,14,12);
 icon('icon:mute-key','confirm',27,256,24,16);
 phrase('长按切换',13,61,256,null,'center');
 phrase('静音',13,121,256,null,'center');
-phrase('统计',12,159,22,null,'center');
-icon('icon:stats','up',139,22,12,12);
 phrase('数据统计',15,120,59,'center');
-phrase('记下这一刻, 继续向前',12,120,282,'center','center');
+phrase('牛马的崩溃瞬间，只有自己知道',12,120,282,'center','center');
 for(const key of ['今日崩溃','日期未确认','日期回拨','未归档'])phrase(key,15,120,59,'center');
 phrase('次',13,206,197,null,'bottom');
 phrase('本周',14,36,104);
 phrase('较昨日',14,36,210);
 icon('icon:ok','confirm',27,226,24,16);
-icon('icon:down','down',179,302,12,12);
 phrase('崩溃时按一下',14,61,226,null,'center');
 phrase('记入今日',12,42,302,null,'center');
-phrase('本月',12,198,302,null,'center');
 phrase('保持分开',12,176,302,null,'center');
-const ret=blockOf('返回今日',{h:12}),upX=Math.round((240-12-6-ret.w)/2);
-icon('icon:up','up',upX,302,12,12);
-icon('icon:stats-back','down',upX,302,12,12);placeBlock('返回今日',ret,upX+18,302,null,'center');
-placeBlock('03 / 03',blockOf('03 / 03',{font:'Digits',h:10}),195,22,'right','center');
+function centeredNav(label){
+ const text=blockOf(label,{h:12});
+ const x=Math.floor((240-12-6-text.w)/2);
+ return {x,text,labelX:x+18};
+}
+const statsNav=centeredNav('统计');
+icon('icon:stats','up',statsNav.x,22,12,12);
+placeBlock('统计',statsNav.text,statsNav.labelX,22,null,'center');
+const monthNav=centeredNav('本月');
+icon('icon:down','down',monthNav.x,302,12,12);
+placeBlock('本月',monthNav.text,monthNav.labelX,302,null,'center');
+const homeNav=centeredNav('返回今日');
+icon('icon:up','up',homeNav.x,22,12,12);
+icon('icon:stats-back','down',homeNav.x,302,12,12);
+placeBlock('返回今日',homeNav.text,homeNav.labelX,22,null,'center');
 for(const day of ['周一','周二','周三','周四','周五','周六','周日'])phrase(day,13,8,48);
 for(const key of ['蓝牙配网','正在校时','校时失败','请打开小程序','记入今日, 保持分开'])phrase(key,13,120,176,'center');
 phrase('写入失败',12,128,205);
@@ -149,6 +156,9 @@ addPhrase('icon:tri-down',{x:36,y:253,w:16,h:17,px:inv});
 const bounds=key=>phrases.find(p=>p.key===key);
 const middle=p=>p.y+p.h/2;
 if(middle(bounds('icon:speaker'))!==22 || middle(bounds('统计'))!==22)throw Error('top center');
+if(middle(bounds('返回今日'))!==22 || middle(bounds('icon:up'))!==22)throw Error('return nav');
+if(middle(bounds('本月'))!==302 || middle(bounds('icon:down'))!==302)throw Error('month nav');
+if(bounds('icon:stats-back').x!==bounds('icon:up').x || middle(bounds('icon:stats-back'))!==302)throw Error('stats nav');
 if(Math.abs(middle(bounds('icon:mute-key'))-middle(bounds('长按切换')))>.5)throw Error('mute center');
 if(Math.abs(middle(bounds('icon:ok'))-middle(bounds('崩溃时按一下')))>.5)throw Error('record center');
 if(bounds('icon:tri-up').y+bounds('icon:tri-up').h!==270)throw Error('triangle baseline');
@@ -318,6 +328,10 @@ function paintPhrase(frame, key, color) {
     const phrase = phrases.find((item) => item.key === key);
     stamp(frame, {x: 0, y: 0, w: phrase.w, h: phrase.h, px: images[phrase.id].px}, color || '#F5F6F1', phrase.x, phrase.y);
 }
+function paintPhraseAt(frame, key, x, y, color) {
+    const phrase = phrases.find((item) => item.key === key);
+    stamp(frame, {x: 0, y: 0, w: phrase.w, h: phrase.h, px: images[phrase.id].px}, color || '#F5F6F1', x, y);
+}
 function paintRun(frame, text, face, left, top, color) {
     let x = left;
     for (const ch of text) {
@@ -434,6 +448,7 @@ function paintMonth(frame) {
 const menloTop = 22 - Math.floor(glyphs[0]['0'.charCodeAt(0)].h / 2);
 const today = blank();
 paintRun(today, '10.23 FRI', 0, 14, menloTop, '#F5F6F1');
+paintRun(today, '86%', 0, 213 - 4 - 3 * menloAdvance, menloTop, '#F5F6F1');
 paintPhrase(today, 'icon:speaker');
 paintPhrase(today, 'icon:mute-key');
 paintPhrase(today, '长按切换');
@@ -443,7 +458,7 @@ paintPhrase(today, '次');
 paintPhrase(today, '静音');
 paintPhrase(today, '统计');
 paintPhrase(today, 'icon:stats');
-paintPhrase(today, '记下这一刻, 继续向前');
+paintPhrase(today, '牛马的崩溃瞬间，只有自己知道');
 paintPhrase(today, 'icon:ok');
 paintPhrase(today, '崩溃时按一下');
 paintPhrase(today, 'icon:down');
@@ -452,7 +467,6 @@ applyBezel(today);
 
 const month = blank();
 paintRun(month, '2026.10', 0, 14, menloTop, '#F5F6F1');
-paintPhrase(month, '03 / 03');
 paintMonth(month);
 paintPhrase(month, 'icon:up');
 paintPhrase(month, '返回今日');
@@ -460,7 +474,9 @@ applyBezel(month);
 
 const stats=blank();
 paintRun(stats,'10.23 FRI',0,14,menloTop,'#F5F6F1');
-for(const key of ['icon:speaker','数据统计','本周','较昨日','icon:stats-back','返回今日'])paintPhrase(stats,key);
+for(const key of ['icon:speaker','数据统计','本周','较昨日','icon:stats-back'])paintPhrase(stats,key);
+const backLabel=bounds('返回今日');
+paintPhraseAt(stats,'返回今日',backLabel.x,Math.round(302-backLabel.h/2));
 paintPhrase(stats,'icon:tri-up','#D28A69');
 paintBox(stats,'2',2,62,242,100,28,'#F5F6F1',true);
 const barFrame=Buffer.alloc(240*320*3);paintBars(barFrame);
@@ -502,7 +518,8 @@ applyBezel(stats);
         unit: box('次'),
         footer: box('崩溃时按一下'),
         monthLabel: box('本月'),
-        page: box('03 / 03'),
+        back: box('返回今日'),
+        motto: box('牛马的崩溃瞬间，只有自己知道'),
         speaker: box('icon:speaker'),
     }, null, 2));
 })();

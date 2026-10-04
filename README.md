@@ -8,7 +8,7 @@ On Today, press Up for Statistics and Down for the month. On Statistics, press D
 
 Statistics draws seven bars for this week, Monday through Sunday, and the change from yesterday. A warm triangle means the count went up, a cool triangle means it went down, and the number is the size of that change. A flat day shows 0. If yesterday has no record, the comparison shows `--`.
 
-The month page is the current calendar month. Each day is a square, and a higher count uses a warmer color. Today has an extra outline. Days outside this month are blank.
+The month page is the current calendar month. Each day is a square, and a higher count uses a deeper red. Today has an extra outline. Days outside this month are blank.
 
 Hold OK to mute or unmute. The speaker mark shows whether sound is on. Mute still records the press and plays nothing. The choice is kept.
 

@@ -16,7 +16,7 @@ There is no page wrap.
 
 ## Comparison and color
 
-The comparison number has no plus or minus sign. A warm triangle means more than yesterday, a cool triangle means less, and 0 means the same. `--` means yesterday has no record. The count and the month squares share one color scale. A higher count uses a warmer color. Today has an extra outline. Days outside the month are empty, not zero.
+The comparison number has no plus or minus sign. A warm triangle means more than yesterday, a cool triangle means less, and 0 means the same. `--` means yesterday has no record. The count and the month squares share one red scale. A higher count uses a deeper red. Today has an extra outline. Days outside the month are empty, not zero.
 
 The on-screen count uses `99999+` at the display limit. Storage keeps the full count.
 

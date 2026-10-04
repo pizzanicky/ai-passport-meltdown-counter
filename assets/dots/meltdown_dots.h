@@ -1,20 +1,20 @@
 #pragma once
 
 /* Generated palette: light. Regenerate with --theme dark|light. */
-#define MELT_COLOR_BG 0xDCE0D9
+#define MELT_COLOR_BG 0xC5C8C2
 #define MELT_COLOR_INK 0x283437
 #define MELT_COLOR_DIM 0x586765
 #define MELT_COLOR_BLUE 0x006DAD
 #define MELT_COLOR_HI 0x238BB5
-#define MELT_COLOR_UP 0xBC4A19
-#define MELT_COLOR_DOWN 0x007B8D
-#define MELT_COLOR_ZERO 0x566E64
+#define MELT_COLOR_UP 0xD5671B
+#define MELT_COLOR_DOWN 0x2674B8
+#define MELT_COLOR_ZERO 0xB1B6AF
 #define MELT_COLOR_FUTURE 0xACB5AE
-#define MELT_HEAT_0 0x566E64
-#define MELT_HEAT_1 0x007B8D
-#define MELT_HEAT_2 0x946100
-#define MELT_HEAT_3 0xBC4A19
-#define MELT_HEAT_4 0xC32136
+#define MELT_HEAT_0 0xB1B6AF
+#define MELT_HEAT_1 0xE6C7BA
+#define MELT_HEAT_2 0xD99D86
+#define MELT_HEAT_3 0xBD6750
+#define MELT_HEAT_4 0x862F2D
 
 #include "lvgl.h"
 

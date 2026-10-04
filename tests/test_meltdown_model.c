@@ -78,7 +78,7 @@ int main(void)
 
     uint16_t seen[5];
     for (int level = 0; level < 5; level++) seen[level] = meltdown_rgb565(meltdown_heat_hex(level));
-    assert(seen[0] == meltdown_rgb565(0x626A6B));
+    assert(seen[0] == meltdown_rgb565(0xB1B6AF));
     for (int i = 0; i < 5; i++) {
         for (int j = i + 1; j < 5; j++) assert(seen[i] != seen[j]);
     }

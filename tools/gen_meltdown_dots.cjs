@@ -13,10 +13,10 @@ GlobalFonts.registerFromPath('/System/Library/Fonts/Menlo.ttc', 'Digits');
 
 const outDir = path.join(__dirname, '..', 'assets', 'dots');
 const themeArg = process.argv.indexOf('--theme');
-const themeName = themeArg >= 0 ? process.argv[themeArg + 1] : 'dark';
+const themeName = themeArg >= 0 ? process.argv[themeArg + 1] : 'light';
 if (!['dark', 'light'].includes(themeName)) throw Error('Use --theme dark|light');
 const dark = {bg:'#34393A',ink:'#F5F6F1',dim:'#BAC3C2',blue:'#43C5FA',hi:'#B8EDFF',up:'#FF9862',down:'#59CADA',zero:'#A3B4AE',future:'#707B7C',heat:['#A3B4AE','#59CADA','#F2C563','#FF9862','#FF6865']};
-const light = {bg:'#DCE0D9',ink:'#283437',dim:'#586765',blue:'#006DAD',hi:'#238BB5',up:'#BC4A19',down:'#007B8D',zero:'#566E64',future:'#ACB5AE',heat:['#566E64','#007B8D','#946100','#BC4A19','#C32136']};
+const light = {bg:'#C5C8C2',ink:'#283437',dim:'#586765',blue:'#006DAD',hi:'#238BB5',up:'#D5671B',down:'#2674B8',zero:'#B1B6AF',future:'#ACB5AE',heat:['#B1B6AF','#E6C7BA','#D99D86','#BD6750','#862F2D']};
 // Legacy sample literals map onto the selected palette, including shared heat roles.
 const reference = {ink:'#F5F6F1',dim:'#BAC3C2',blue:'#66B4D8',hi:'#C0E9F1',up:'#D28A69',down:'#8BB3BD',zero:'#7C8789',future:'#707B7C',heat:['#626A6B','#8BB3BD','#BD9F77','#D28A69','#DD766F']};
 const theme = themeName === 'light' ? light : dark;
@@ -28,8 +28,7 @@ function themedColor(color) {
 
 
 
-// Native-resolution asset authoring. All glyph coverage is computed offline.
-// Small Chinese strokes retain coverage; only large shapes have separated holes.
+// Native-resolution asset authoring. Glyphs stay continuous; the paper field has no holes.
 const images = [], phrases = [], glyphs = [[], [], []];
 function addImage(px,w,h) { const id=images.length; images.push({id,px,w,h}); return id; }
 function addPhrase(key,r) { const id=addImage(r.px,r.w,r.h); const p={key,id,x:r.x||0,y:r.y||0,w:r.w,h:r.h}; phrases.push(p); return p; }
@@ -57,19 +56,7 @@ function maskText(text,height,font='Han',weight=400) {
  }
  return {w,h,px};
 }
-function texture(r,large=false) {
- const px=Buffer.from(r.px);
- for(let y=0;y<r.h;y++)for(let x=0;x<r.w;x++){
-  // Fixed integral lattice avoids moire and broken strokes from irrational pitch.
-  if(large){
-   px[y*r.w+x]=Math.round(px[y*r.w+x]*((x%3<2&&y%3<2)?1:0));
-  }else{
-   // At 12px a Chinese stroke is often one pixel wide. Keep it continuous.
-   px[y*r.w+x]=Math.round(255*Math.pow(px[y*r.w+x]/255,.72)*(((x+y)%2)?1:.88));
-  }
- }
- return {...r,px};
-}
+function texture(r) { return r; }
 function blockOf(text,opt) {return texture(maskText(text,opt.h,opt.font||'Han',opt.weight||400));}
 function placeBlock(key,r,x,y,anchor,valign){
  if(anchor==='center')x-=r.w/2;if(anchor==='right')x-=r.w;
@@ -178,12 +165,14 @@ for(const p of phrases){if(p.key.startsWith('周'))continue;
  for(let y=p.y;y<p.y+p.h;y++){const span=rowSpan(y);if(!span||p.x<span.x1||p.x+p.w-1>span.x2)throw Error('bezel clips '+p.key);}
 }
 function cellDots(side,ring){
- const px=Buffer.alloc(side*side);
+ const c=createCanvas(side*4,side*4),g=c.getContext('2d');g.scale(4,4);
+ g.fillStyle='white';g.strokeStyle='white';g.lineWidth=1;
+ g.beginPath();g.roundRect(.5,.5,side-1,side-1,2);
+ if(ring)g.stroke();else g.fill();
+ const raw=g.getImageData(0,0,side*4,side*4).data,px=Buffer.alloc(side*side);
  for(let y=0;y<side;y++)for(let x=0;x<side;x++){
-  // Rounded tile outline, with 2px ink cells on a 3px grid.
-  if((x<2||x>=side-2)&&(y<2||y>=side-2))continue;
-  if(ring){if(x===0||y===0||x===side-1||y===side-1)px[y*side+x]=((x+y)%3)?210:70;}
-  else {const dx=x%5,dy=y%5;px[y*side+x]=(dx<4&&dy<4)?255:30;}
+  let sum=0;for(let j=0;j<4;j++)for(let i=0;i<4;i++)sum+=raw[((y*4+j)*side*4+x*4+i)*4+3];
+  px[y*side+x]=Math.round(sum/16);
  }
  return {x:0,y:0,w:side,h:side,px};
 }
@@ -215,11 +204,9 @@ function imageC(id) {
 
 const mesh=[];
 for(let y=0;y<24;y++)for(let x=0;x<24;x++){
- let distance=100;
- for(let yy=-1;yy<=1;yy++)for(let xx=-1;xx<=1;xx++)for(const [cx,cy] of [[1,1],[4,4]]){
-  distance=Math.min(distance,Math.hypot(x%6+.5-cx-xx*6,y%6+.5-cy-yy*6));
- }
- const c=themeName==='light' ? (distance<.9?[167,179,171]:distance<1.45?[195,204,195]:distance<2?[236,239,229]:[220,224,217]) : distance<.9?[27,31,32]:distance<1.45?[36,41,42]:distance<2?[55,61,62]:[48,54,55];
+ const grain=((x*17+y*31+x*y*7)%5)-2;
+ const base=themeName==='light'?[197,200,194]:[52,57,58];
+ const c=base.map((channel)=>Math.max(0,Math.min(255,channel+grain)));
  mesh.push(((c[0]>>3)<<11)|((c[1]>>2)<<5)|(c[2]>>3));
 }
 const meshC=`const uint16_t melt_mesh_px[576] = {${mesh.join(',')}};
@@ -395,11 +382,13 @@ function applyBezel(frame) {
         }
     }
 }
+function heatColor(count){return theme.heat[count===0?0:count<=2?1:count<=5?2:count<=9?3:4];}
 function paintBars(frame) {
- const heights=[15,9,12,19,27,20,13],bottom=275;
- for(let i=0;i<7;i++)for(let y=bottom-2;y>=bottom-heights[i];y-=3)for(let x=0;x<7;x+=3){
-  const px=Buffer.alloc(4,255);
-  stamp(frame,{x:0,y:0,w:2,h:2,px},y<bottom-heights[i]+3?'#C0E9F1':'#66B4D8',16+i*12+x,y);
+ const heights=[10,17,0,20,27,0,0],bottom=275;
+ for(let i=0;i<7;i++){
+  if(!heights[i])continue;
+  stamp(frame,{x:0,y:0,w:7,h:heights[i],px:Buffer.alloc(7*heights[i],255)},'#66B4D8',16+i*12,bottom-heights[i]);
+  stamp(frame,{x:0,y:0,w:7,h:1,px:Buffer.alloc(7,255)},'#C0E9F1',16+i*12,bottom-heights[i]);
  }
 }
 function paintMonth(frame) {
@@ -430,25 +419,26 @@ function paintMonth(frame) {
             const x = originX + column * (cell + gap);
             const y = originY + row * (cell + gap);
             if (day < 1 || day > 31) continue;
-            if (day > 3) {
+            if (day > 23) {
                 stamp(frame, {x: 0, y: 0, w: 26, h: 26, px: images[ringLgId].px}, '#707B7C', x, y);
                 continue;
             }
-            const color = day === 3 ? '#BD9F77' : '#7C8789';
+            const counts=[0,2,4,0,6,3,1,10,2,0,4,6,2,1,0,12,3,4,3,5,0,6,8];
+            const color=heatColor(counts[day-1]);
             stamp(frame, {x: 0, y: 0, w: 26, h: 26, px: images[fillLgId].px}, color, x, y);
-            if (day === 3) stamp(frame, {x: 0, y: 0, w: 26, h: 26, px: images[ringLgId].px}, '#F5F6F1', x, y);
+            if (day === 23) stamp(frame, {x: 0, y: 0, w: 26, h: 26, px: images[ringLgId].px}, '#F5F6F1', x, y);
         }
     }
 }
 
 const menloTop = 22 - Math.floor(glyphs[0]['0'.charCodeAt(0)].h / 2);
 const today = blank();
-paintRun(today, '10.03 SAT', 0, 14, menloTop, '#F5F6F1');
+paintRun(today, '10.23 FRI', 0, 14, menloTop, '#F5F6F1');
 paintPhrase(today, 'icon:speaker');
 paintPhrase(today, 'icon:mute-key');
 paintPhrase(today, '长按切换');
 paintPhrase(today, '今日崩溃');
-paintBox(today, '08', 1, 40, 89, 160, 108, '#D28A69', false);
+paintBox(today, '08', 1, 40, 89, 160, 108, heatColor(8), false);
 paintPhrase(today, '次');
 paintPhrase(today, '静音');
 paintPhrase(today, '统计');
@@ -469,7 +459,7 @@ paintPhrase(month, '返回今日');
 applyBezel(month);
 
 const stats=blank();
-paintRun(stats,'10.03 SAT',0,14,menloTop,'#F5F6F1');
+paintRun(stats,'10.23 FRI',0,14,menloTop,'#F5F6F1');
 for(const key of ['icon:speaker','数据统计','本周','较昨日','icon:stats-back','返回今日'])paintPhrase(stats,key);
 paintPhrase(stats,'icon:tri-up','#D28A69');
 paintBox(stats,'2',2,62,242,100,28,'#F5F6F1',true);

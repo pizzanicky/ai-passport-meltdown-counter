@@ -65,6 +65,6 @@
 
 可编辑母版和被否定的草稿留在仓库外的 `plans/meltdown-counter/audio/`。静音、翻页、校时和恢复历史都不播放这两段声音。新的一次按下会换掉正在播放的声音。
 
-## 原生网孔界面资源
+## 原生纸面界面资源
 
-`dots/meltdown_dots.c/.h` 由 `node tools/gen_meltdown_dots.cjs` 生成，包含 A8 灰度文字/图标蒙版和 24×24 RGB565 网孔纹理。中文源字体是 LVGL 附带的 Source Han Sans SC Normal，SIL OFL，见 `fonts/OFL-SourceHanSansSC.txt`。Avenir Next Condensed 和 Menlo 只作为本机 macOS 栅格化参考，不分发字体文件。小字保留灰度笔画，大数字使用整数 3px 点阵周期；设备不运行字体栅格器。旧 1bpp 字库保留为历史资源，当前界面使用图像蒙版。
+`dots/meltdown_dots.c/.h` 由 `node tools/gen_meltdown_dots.cjs` 生成，包含连续灰度的 A8 文字与图标蒙版、实心圆角色块，以及 24×24 RGB565 纸面纹理。默认主题是浅色。中文源字体是 LVGL 附带的 Source Han Sans SC Normal，SIL OFL，见 `fonts/OFL-SourceHanSansSC.txt`。Avenir Next Condensed 和 Menlo 只作为本机 macOS 栅格化参考，不分发字体文件。字形保留灰度覆盖。设备不运行字体栅格器。旧 1bpp 字库保留为历史资源，当前界面使用图像蒙版。

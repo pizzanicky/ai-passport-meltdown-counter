@@ -7,11 +7,11 @@
 #define SHANGHAI_OFFSET_SECONDS (8 * 60 * 60)
 
 static const uint32_t HEAT_HEX[5] = {
-    0x626A6Bu,
-    0x8BB3BDu,
-    0xBD9F77u,
-    0xD28A69u,
-    0xDD766Fu,
+    0xB1B6AFu,
+    0xE6C7BAu,
+    0xD99D86u,
+    0xBD6750u,
+    0x862F2Du,
 };
 
 static const char *const WEEKDAY_EN[7] = {

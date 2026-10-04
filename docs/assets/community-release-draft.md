@@ -20,7 +20,7 @@ Press OK when a moment feels like too much. Today shows the count, Statistics sh
 
 Press OK once to record the moment. Today shows the count and plays a short sound. Press Up for Statistics, which shows this week's seven bars from Monday through Sunday and the change from yesterday. Press Down there to return. On Today, press Down for the month, then Up to return. The pages do not wrap. A short OK press on Statistics or the month also records one count and returns to Today.
 
-A warm triangle means more than yesterday, a cool triangle means less, and the number is the size of the change. The same count shows 0. If yesterday has no record, the comparison shows `--`. The month is the current month. A higher count uses a warmer color. Today has an extra outline, and days outside the month are blank.
+A warm triangle means more than yesterday, a cool triangle means less, and the number is the size of the change. The same count shows 0. If yesterday has no record, the comparison shows `--`. The month is the current month. A higher count uses a deeper red. Today has an extra outline, and days outside the month are blank.
 
 Hold OK to mute or unmute. The speaker mark shows the state. Mute still records the press and plays nothing. Counts 1 through 5 play a casing burst. From 6, the press plays an egg crack. A new day starts on the burst again and does not play by itself.
 

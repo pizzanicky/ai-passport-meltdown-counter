@@ -15,8 +15,7 @@
 #define COL_HI MELT_COLOR_HI
 #define COL_UP MELT_COLOR_UP
 #define COL_DOWN MELT_COLOR_DOWN
-/* Brighter than the mesh so a zero square and a future outline stay visible.
-   Non-zero heat colors stay on the token scale. */
+/* Paper field. Zero and the month squares share the red scale; future days are an outline. */
 #define COL_ZERO MELT_COLOR_ZERO
 #define COL_FUTURE MELT_COLOR_FUTURE
 /* Numbers are one A8 image, not one widget per dot. */
@@ -232,27 +231,6 @@ static void bind_stamp(uint8_t *buf, bool *used, int origin_x, int origin_y, int
     memset(buf, 0, (size_t)width * (size_t)height);
 }
 
-static void dot(int x, int y, int size)
-{
-    if (!s_stamp.buf || size < 1) return;
-    const int radius = size - 1;
-    for (int row = 0; row < size; row++) {
-        for (int col = 0; col < size; col++) {
-            /* Size 4 is the week column. The circle test collapses it to a 2px hairline. */
-            if (size > 4) {
-                const int dx = col * 2 - radius;
-                const int dy = row * 2 - radius;
-                if (dx * dx + dy * dy > radius * radius) continue;
-            }
-            const int px = x + col - s_stamp.origin_x;
-            const int py = y + row - s_stamp.origin_y;
-            if (px < 0 || py < 0 || px >= s_stamp.width || py >= s_stamp.height) continue;
-            s_stamp.buf[py * s_stamp.stride + px] = 255;
-            *s_stamp.used = true;
-        }
-    }
-}
-
 static bool blit_glyphs(uint8_t *dst, int width, int height, const char *text, int face, bool bottom)
 {
     memset(dst, 0, (size_t)width * (size_t)height);
@@ -365,22 +343,30 @@ static void style_cell(lv_obj_t *cell, const meltdown_cell_t *info, int cell_px)
     recolor_if(cell, color);
 }
 
+static void fill_rect(int x, int y, int width, int height)
+{
+    if (!s_stamp.buf || width < 1 || height < 1) return;
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            const int px = x + col - s_stamp.origin_x;
+            const int py = y + row - s_stamp.origin_y;
+            if (px < 0 || py < 0 || px >= s_stamp.width || py >= s_stamp.height) continue;
+            s_stamp.buf[py * s_stamp.stride + px] = 255;
+            *s_stamp.used = true;
+        }
+    }
+}
+
 static void paint_bars(const int *heights, bool highlight)
 {
     const int bottom = BARS_Y + BARS_H;
-    const int dot_size = 2;
-    const int pitch = 3;
     for (int i = 0; i < 7; i++) {
         const int height = heights[i];
         if (height <= 0) continue;
-        const int limit = bottom - height;
-        for (int y = bottom - dot_size; y >= BARS_Y; y -= pitch) {
-            if (y + dot_size <= limit) break;
-            const bool top = y < limit + pitch;
-            const bool hi = top && height > dot_size;
-            if (hi != highlight) continue;
-            for (int x = 0; x < 7; x += 3) dot(BARS_X + i * 12 + x, y, dot_size);
-        }
+        const int x = BARS_X + i * 12;
+        const int y = bottom - height;
+        if (highlight) fill_rect(x, y, 7, 1);
+        else if (height > 1) fill_rect(x, y + 1, 7, height - 1);
     }
 }
 

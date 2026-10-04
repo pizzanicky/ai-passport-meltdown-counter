@@ -21,6 +21,8 @@ COMMUNITY_DOCUMENT_NAMES = {
     for suffix in ("", ".zh_CN")
 }
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+# The language label and the official provisioning mini-program name are proper names.
+ENGLISH_PROPER_NAMES = ("简体中文", "蓝牙配网-FoloToy AI PASSPORT")
 SECRET_PATTERNS = {
     "GitHub token": re.compile(r"(?:ghp_|github_pat_)[A-Za-z0-9_]{20,}"),
     "AWS access key": re.compile(r"AKIA[0-9A-Z]{16}"),
@@ -242,7 +244,9 @@ def check_document_languages(
                 f"{path.relative_to(ROOT)}: missing top language link to {chinese_name}"
             )
 
-        english_prose = text.replace("简体中文", "")
+        english_prose = text
+        for proper_name in ENGLISH_PROPER_NAMES:
+            english_prose = english_prose.replace(proper_name, "")
         match = CJK_RE.search(english_prose)
         if match:
             line = english_prose.count("\n", 0, match.start()) + 1

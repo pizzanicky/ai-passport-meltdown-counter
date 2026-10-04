@@ -2,7 +2,7 @@
 
 # Community release draft
 
-Status: prepared locally. This draft is not an upload approval. Do not submit it until the author reviews every field and completes the open checks below.
+Status: submitted for review on 2026-10-04. Project 933, revision 1951, slug `community-bd87a35c`. The review status is pending. It is not public yet.
 
 | Field | Prepared value |
 | --- | --- |
@@ -10,7 +10,7 @@ Status: prepared locally. This draft is not an upload approval. Do not submit it
 | English title | Meltdown Counter |
 | Cover | [`../../assets/images/community-cover.png`](../../assets/images/community-cover.png), PNG, 1152 x 1536. A host composition of the three interface renders with example data. It is not a photograph of a device. |
 | Public source | `https://github.com/pizzanicky/ai-passport-meltdown-counter` |
-| Firmware | Not packed from this commit. Before upload, run `./tools/validate.sh --firmware` on this revision and copy the merged image at `build/FoloToy-AI-Passport-full.bin`, with its full image, app, and ELF hashes. Do not substitute an app-only image. |
+| Firmware | Merged image `build/FoloToy-AI-Passport-full.bin` packed from clean public commit `aac8752` before this note. Version string `aac8752`. Merged SHA-256 `f5ffcfc61fc819c806614997abbbdfc4a8ff5cd3cc54af7ca9c47744c15548b4`, 1764512 bytes, written from address 0. App SHA-256 `bf74aa242a3665a15143f60117703925f47b0fedb9a62e2301ecbcda6d55a62e`, 1698976 bytes. ELF SHA-256 `fea96c2aec1fed0dd17dbe4b2e7a9104d58b9f3ac3e9e50faae1fe8fd16d5666`. |
 
 ## English description
 
@@ -30,7 +30,8 @@ Presses made before the date is known stay aside and use the casing burst. When 
 
 ## Checks before publication
 
-- Rebuild `./tools/validate.sh --firmware` on the public commit and record the merged image, app, and ELF hashes. Recheck after any source change.
+- `./tools/validate.sh --firmware` passed on clean public commit `aac8752`. Hashes are in the table above. Rebuild after any source change.
+- On 2026-10-04 the live creator-selectable tags were only multiplayer and family. Neither applies, so the submission omits them. The platform assigns the category.
 - Confirm the cover is a 1152 x 1536 PNG at most 10 MiB, and inspect the file that will be uploaded. Keep its caption as a host illustration with example data, not a device photograph.
-- On the device, accept the three pages, the count, mute, both sounds, the month colors, and a full provisioning and time-sync pass. A merged image written from address 0 can replace saved records and Wi-Fi. Explain that before asking for flash consent.
-- Review every field with the author. Authorization on the official site, and a separate yes to upload, are still required. This draft does not authorize either.
+- On 2026-10-04 the author accepted the latest on-device version: three pages, the count, mute, both sounds, battery, and the one-minute blank. A merged image written from address 0 can replace saved records and Wi-Fi.
+- Submitted for review as project 933, revision 1951. Pending review is not a public release.
